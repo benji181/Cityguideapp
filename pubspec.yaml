@@ -11,13 +11,17 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+<<<<<<< HEAD
   salomon_bottom_bar: ^3.3.1
   permission_handler: ^11.3.1
+=======
+>>>>>>> a29e46e1d94a96b0b2dc542a27bdb8a4910611d0
   cupertino_icons: ^1.0.2
   firebase_core: ^2.15.1
   firebase_auth: ^4.9.0
   google_sign_in: ^6.1.4
   sign_in_with_apple: ^5.0.0
+<<<<<<< HEAD
   github_sign_in: ^0.0.5-dev.4
   flutter_map: ^5.0.0
   latlong2: ^0.9.0
@@ -31,15 +35,21 @@ dependencies:
 
 
 
+=======
+  github_sign_in: ^0.0.5-dev.1
+>>>>>>> a29e46e1d94a96b0b2dc542a27bdb8a4910611d0
 
 dependency_overrides:
   webview_flutter: ^4.4.2
   webview_flutter_android: ^3.13.1
   webview_flutter_platform_interface: ^2.6.0
   webview_flutter_wkwebview: ^3.9.4
+<<<<<<< HEAD
   http: ^1.0.0
   flutter_polyline_points: ^2.1.0
 
+=======
+>>>>>>> a29e46e1d94a96b0b2dc542a27bdb8a4910611d0
 #
 #dependency_overrides:
 #  webview_flutter_android: ^4.3.1

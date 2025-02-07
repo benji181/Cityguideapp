@@ -8,8 +8,11 @@
 
 #include <firebase_auth/firebase_auth_plugin_c_api.h>
 #include <firebase_core/firebase_core_plugin_c_api.h>
+<<<<<<< HEAD
 #include <geolocator_windows/geolocator_windows.h>
 #include <permission_handler_windows/permission_handler_windows_plugin.h>
+=======
+>>>>>>> a29e46e1d94a96b0b2dc542a27bdb8a4910611d0
 #include <url_launcher_windows/url_launcher_windows.h>
 
 void RegisterPlugins(flutter::PluginRegistry* registry) {
@@ -17,10 +20,13 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("FirebaseAuthPluginCApi"));
   FirebaseCorePluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FirebaseCorePluginCApi"));
+<<<<<<< HEAD
   GeolocatorWindowsRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("GeolocatorWindows"));
   PermissionHandlerWindowsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("PermissionHandlerWindowsPlugin"));
+=======
+>>>>>>> a29e46e1d94a96b0b2dc542a27bdb8a4910611d0
   UrlLauncherWindowsRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("UrlLauncherWindows"));
 }
