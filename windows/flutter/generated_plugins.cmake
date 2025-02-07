@@ -5,11 +5,8 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   firebase_auth
   firebase_core
-<<<<<<< HEAD
   geolocator_windows
   permission_handler_windows
-=======
->>>>>>> a29e46e1d94a96b0b2dc542a27bdb8a4910611d0
   url_launcher_windows
 )
 

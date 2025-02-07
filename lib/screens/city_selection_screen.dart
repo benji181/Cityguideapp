@@ -1,18 +1,14 @@
 import 'package:flutter/material.dart';
-<<<<<<< HEAD
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import 'package:cityguideapp/screens/likes_screen.dart';
 import 'package:cityguideapp/screens/user_profile_screen.dart';
 import 'package:cityguideapp/screens/attraction_list_screen.dart';
-=======
->>>>>>> a29e46e1d94a96b0b2dc542a27bdb8a4910611d0
 
 class City {
   final String id;
   final String name;
   final String description;
   final String imageUrl;
-<<<<<<< HEAD
   final double lat;
   final double lng;
 
@@ -170,24 +166,12 @@ class _CitySelectionScreenState extends State<CitySelectionScreen> {
         lat: 40.7128,
         lng: -74.0060
     ),
-=======
-
-  City({required this.id, required this.name, required this.description, required this.imageUrl});
-}
-
-class CitySelectionScreen extends StatelessWidget {
-  final List<City> cities = [
-    City(id: '1', name: 'New York', description: 'The Big Apple', imageUrl: 'assets/nyc.jpeg'),
-    City(id: '2', name: 'London', description: 'The British Capital', imageUrl: 'assets/london.jpeg'),
-    City(id: '3', name: 'Tokyo', description: 'The Land of the Rising Sun', imageUrl: 'assets/tokyo.jpeg'),
->>>>>>> a29e46e1d94a96b0b2dc542a27bdb8a4910611d0
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-<<<<<<< HEAD
         backgroundColor: Colors.brown,
         title: Text(
           'Select a City',
@@ -272,38 +256,10 @@ class CitySelectionScreen extends StatelessWidget {
                   ),
                 ],
               ),
-=======
-        title: Text('Select a City'),
-      ),
-      body: ListView.builder(
-        itemCount: cities.length,
-        itemBuilder: (context, index) {
-          return Card(
-            child: ListTile(
-              leading: Image.asset(
-                cities[index].imageUrl,
-                width: 50,
-                height: 50,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(Icons.error);  // Show an error icon if image fails to load
-                },
-              ),
-              title: Text(cities[index].name),
-              subtitle: Text(cities[index].description),
-              onTap: () {
-                Navigator.pushNamed(
-                  context,
-                  '/attraction_list',
-                  arguments: cities[index].id,
-                );
-              },
->>>>>>> a29e46e1d94a96b0b2dc542a27bdb8a4910611d0
             ),
           );
         },
       ),
-<<<<<<< HEAD
       bottomNavigationBar: SalomonBottomBar(
         currentIndex: _currentIndex,
         onTap: (index) {
@@ -410,8 +366,6 @@ class CitySearchDelegate extends SearchDelegate<City> {
           },
         );
       },
-=======
->>>>>>> a29e46e1d94a96b0b2dc542a27bdb8a4910611d0
     );
   }
 }

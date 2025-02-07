@@ -1,21 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-<<<<<<< HEAD
 
     <!-- Request location permissions -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
 
-=======
->>>>>>> a29e46e1d94a96b0b2dc542a27bdb8a4910611d0
     <application
         android:label="City Guide"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
-<<<<<<< HEAD
 
-=======
->>>>>>> a29e46e1d94a96b0b2dc542a27bdb8a4910611d0
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -24,10 +18,6 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
-<<<<<<< HEAD
-
-=======
->>>>>>> a29e46e1d94a96b0b2dc542a27bdb8a4910611d0
             <!-- Specifies an Android theme to apply to this Activity as soon as
                  the Android process has started. This theme is visible to the user
                  while the Flutter UI initializes. After that, this theme continues
@@ -41,19 +31,11 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-<<<<<<< HEAD
 
-=======
->>>>>>> a29e46e1d94a96b0b2dc542a27bdb8a4910611d0
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
-<<<<<<< HEAD
 </manifest>
-=======
-</manifest>
-
->>>>>>> a29e46e1d94a96b0b2dc542a27bdb8a4910611d0

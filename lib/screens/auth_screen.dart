@@ -3,8 +3,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:cityguideapp/screens/city_selection_screen.dart';
 
-import 'city_selection_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   @override
@@ -29,11 +29,8 @@ class _AuthScreenState extends State<AuthScreen> {
   void _checkCurrentUser() {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-<<<<<<< HEAD
       print('User is already signed in: ${user.email}');
-=======
       print('User is already signed in: ${user.uid}');
->>>>>>> a29e46e1d94a96b0b2dc542a27bdb8a4910611d0
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.pushReplacement(
             context,
