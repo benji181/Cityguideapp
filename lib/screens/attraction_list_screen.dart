@@ -1,89 +1,14 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:flutter_polyline_points/flutter_polyline_points.dart';
-
-class Attraction {
-  final String id;
-  final String name;
-  final String category;
-  final double rating;
-  final String imageUrl;
-  final double lat;
-  final double lng;
-  final String description;
-  final String contactInfo;
-  final String openingHours;
-  final String address;
-  final String website;
-
-  Attraction({
-    required this.id,
-    required this.name,
-    required this.category,
-    required this.rating,
-    required this.imageUrl,
-    required this.lat,
-    required this.lng,
-    required this.description,
-    required this.contactInfo,
-    required this.openingHours,
-    required this.address,
-    required this.website,
-  });
-
-  factory Attraction.fromHereAPI(Map<String, dynamic> json) {
-    final position = json['position'];
-    return Attraction(
-      id: json['id'] ?? '',
-      name: json['title'] ?? 'Unknown',
-      category: json['categories']?.first?['name'] ?? 'Other',
-      rating: json['averageRating']?.toDouble() ?? 0.0,
-      imageUrl: 'https://via.placeholder.com/150', // We'll update this later
-      lat: position?['lat']?.toDouble() ?? 0.0,
-      lng: position?['lng']?.toDouble() ?? 0.0,
-      description: json['description'] ?? 'No description available',
-      contactInfo: json['contacts']?.first?['phone']?.first?['value'] ?? 'No contact information available',
-      openingHours: _formatOpeningHours(json['openingHours']),
-      address: json['address']['label'] ?? 'Address not available',
-      website: json['contacts']?.first?['www']?.first?['value'] ?? '',
-    );
-  }
-
-  static String _formatOpeningHours(dynamic hours) {
-    if (hours == null) return 'Opening hours not available';
-    // Format opening hours from HERE API response
-    try {
-      final text = hours['text'] ?? hours['structured']?.map((h) =>
-      '${h['day']}: ${h['start']}-${h['end']}').join('\n');
-      return text ?? 'Opening hours not available';
-    } catch (e) {
-      return 'Opening hours not available';
-    }
-  }
-
-  Attraction copyWith({String? imageUrl}) {
-    return Attraction(
-      id: this.id,
-      name: this.name,
-      category: this.category,
-      rating: this.rating,
-      imageUrl: imageUrl ?? this.imageUrl,
-      lat: this.lat,
-      lng: this.lng,
-      description: this.description,
-      contactInfo: this.contactInfo,
-      openingHours: this.openingHours,
-      address: this.address,
-      website: this.website,
-    );
-  }
-}
+import 'package:cityguideapp/models/attraction.dart';
+import 'package:cityguideapp/screens/attraction_detail_screen.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AttractionListScreen extends StatefulWidget {
   final String cityId;
@@ -104,16 +29,17 @@ class AttractionListScreen extends StatefulWidget {
 
 class _AttractionListScreenState extends State<AttractionListScreen> {
   List<Attraction> _attractions = [];
+  List<Attraction> _filteredAttractions = [];
   String _selectedCategory = 'All';
+  String _sortBy = 'Rating';
   Position? _currentPosition;
   MapController _mapController = MapController();
   bool _isLoading = true;
-  List<Attraction> _filteredAttractions = [];
   double _zoomLevel = 13.0;
-  final String _apiKey = 'gywUzR7OETC2wSWi7bj8xZy4J4pkDIAmeaK8Xp0_UCs'; // Replace with your HERE API key
-  final String _unsplashApiKey = 'rAJe0q86-WJBOOnSk4PbCIZUQK1vkJLX0XP5880I90g'; // Replace with your Unsplash API key
-  List<LatLng> _routePoints = [];
-  List<String> _routeInstructions = [];
+  final TextEditingController _searchController = TextEditingController();
+
+  final String _unsplashApiKey = 'rAJe0q86-WJBOOnSk4PbCIZUQK1vkJLX0XP5880I90g'; // Replace with your Unsplash access key
+  String _apiKey = 'puSI3dzJ263diYCcXINNhmrqDfp0ZeM_Wjv3c07_VKQ'; // Replace with your actual HERE API key
 
 
   @override
@@ -124,25 +50,6 @@ class _AttractionListScreenState extends State<AttractionListScreen> {
   }
 
   Future<void> _getCurrentLocation() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Location services are disabled.')),
-      );
-      return;
-    }
-
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Location permission denied.')),
-        );
-        return;
-      }
-    }
-
     try {
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
@@ -151,9 +58,7 @@ class _AttractionListScreenState extends State<AttractionListScreen> {
         _currentPosition = position;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error getting location: $e')),
-      );
+      print("Error getting location: $e");
     }
   }
 
@@ -187,18 +92,22 @@ class _AttractionListScreenState extends State<AttractionListScreen> {
 
         if (response.statusCode == 200) {
           final data = json.decode(response.body);
+          print('API Response: $data'); // Debug print
           final items = data['items'] as List;
 
           attractions.addAll(
-              items.map((item) => Attraction.fromHereAPI(item)).toList()
+              items.map((item) => _attractionFromHereAPI(item)).toList()
           );
+        } else {
+          print('Error response: ${response.statusCode} - ${response.body}'); // Debug print
+          throw Exception('API returned ${response.statusCode}');
         }
       }
 
       // Fetch images for attractions
       final attractionsWithImages = await Future.wait(
           attractions.map((attraction) async {
-            final imageUrl = await _getImageUrlFromUnsplash(attraction.name);
+            final imageUrl = await _getImageFromUnsplash(attraction.name, attraction.category);
             return attraction.copyWith(imageUrl: imageUrl);
           })
       );
@@ -220,274 +129,141 @@ class _AttractionListScreenState extends State<AttractionListScreen> {
     }
   }
 
-  Future<String> _getImageUrlFromUnsplash(String query) async {
+  Attraction _attractionFromHereAPI(Map<String, dynamic> json) {
+    final position = json['position'];
+    return Attraction(
+      id: json['id'] ?? '',
+      name: json['title'] ?? 'Unknown',
+      category: json['categories']?.first?['name'] ?? 'Other',
+      rating: json['averageRating']?.toDouble() ?? 0.0,
+      imageUrl: 'https://via.placeholder.com/150', // We'll update this later
+      lat: position?['lat']?.toDouble() ?? 0.0,
+      lng: position?['lng']?.toDouble() ?? 0.0,
+      description: json['description'] ?? 'No description available',
+      contactInfo: json['contacts']?.first?['phone']?.first?['value'] ?? 'No contact information available',
+      openingHours: _formatOpeningHours(json['openingHours']),
+      address: json['address']['label'] ?? 'Address not available',
+      website: json['contacts']?.first?['www']?.first?['value'] ?? '',
+
+    );
+  }
+
+  String _formatOpeningHours(dynamic hours) {
+    if (hours == null) return 'Opening hours not available';
+    try {
+      final text = hours['text'] ?? hours['structured']?.map((h) =>
+      '${h['day']}: ${h['start']}-${h['end']}').join('\n');
+      return text ?? 'Opening hours not available';
+    } catch (e) {
+      return 'Opening hours not available';
+    }
+  }
+
+  Future<String> _getImageFromUnsplash(String query, String category) async {
+    final searchQuery = '${widget.cityName} ${category.toLowerCase()} ${query} location landmark';
     final url = Uri.parse(
-        'https://api.unsplash.com/search/photos?query=$query&client_id=$_unsplashApiKey'
+        'https://api.unsplash.com/search/photos?query=${Uri.encodeComponent(searchQuery)}&per_page=10&orientation=landscape'
     );
 
     try {
-      final response = await http.get(url);
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Client-ID $_unsplashApiKey',
+        },
+      );
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final results = data['results'] as List;
-        if (results.isNotEmpty) {
-          return results.first['urls']['small'];
+        final images = data['results'] as List;
+        if (images.isNotEmpty) {
+          final random = Random().nextInt(images.length);
+          return images[random]['urls']['regular'];
         }
       }
     } catch (e) {
       print("Error fetching image from Unsplash: $e");
     }
-    return 'https://via.placeholder.com/150';
+    return 'https://picsum.photos/seed/${query.hashCode}/150/150';
   }
 
-  void _filterAttractions(String query) {
+  void _filterAttractions() {
     setState(() {
       _filteredAttractions = _attractions.where((attraction) {
-        return attraction.name.toLowerCase().contains(query.toLowerCase());
+        final nameMatch = attraction.name.toLowerCase().contains(_searchController.text.toLowerCase());
+        final categoryMatch = _selectedCategory == 'All' || attraction.category == _selectedCategory;
+        return nameMatch && categoryMatch;
       }).toList();
+
+      _sortAttractions();
     });
   }
 
-  Future<void> _getDirections(double startLat, double startLon, double endLat, double endLon) async {
-    final url = Uri.parse(
-        'https://router.hereapi.com/v8/routes'
-            '?apiKey=$_apiKey'
-            '&transportMode=car'
-            '&origin=$startLat,$startLon'
-            '&destination=$endLat,$endLon'
-            '&return=polyline,actions,instructions'
-    );
-
-    try {
-      final response = await http.get(url);
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final route = data['routes'][0]['sections'][0];
-
-        // Parse polyline
-        final polyline = route['polyline'];
-        final points = PolylinePoints().decodePolyline(polyline);
-        setState(() {
-          _routePoints = points.map((point) => LatLng(point.latitude, point.longitude)).toList();
-        });
-
-        // Parse instructions
-        final actions = route['actions'] as List;
-        setState(() {
-          _routeInstructions = actions.map((action) => action['instruction'] as String).toList();
-        });
-
-        // Update map to show the route
-        _mapController.fitBounds(
-          LatLngBounds.fromPoints(_routePoints),
-          options: FitBoundsOptions(padding: EdgeInsets.all(50.0)),
-        );
+  void _sortAttractions() {
+    setState(() {
+      switch (_sortBy) {
+        case 'Rating':
+          _filteredAttractions.sort((a, b) => b.rating.compareTo(a.rating));
+          break;
+        case 'Name':
+          _filteredAttractions.sort((a, b) => a.name.compareTo(b.name));
+          break;
+        case 'Distance':
+          if (_currentPosition != null) {
+            _filteredAttractions.sort((a, b) {
+              final distanceA = Geolocator.distanceBetween(
+                _currentPosition!.latitude,
+                _currentPosition!.longitude,
+                a.lat,
+                a.lng,
+              );
+              final distanceB = Geolocator.distanceBetween(
+                _currentPosition!.latitude,
+                _currentPosition!.longitude,
+                b.lat,
+                b.lng,
+              );
+              return distanceA.compareTo(distanceB);
+            });
+          }
+          break;
       }
-    } catch (e) {
-      print("Error getting directions: $e");
-    }
+    });
   }
 
-  void _showAttractionDetails(Attraction attraction) async {
-    if (_currentPosition != null) {
-      await _getDirections(
-        _currentPosition!.latitude,
-        _currentPosition!.longitude,
-        attraction.lat,
-        attraction.lng,
-      );
-    }
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext context) {
-        return Container(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (attraction.imageUrl.isNotEmpty)
-                Image.network(
-                  attraction.imageUrl,
-                  height: 200,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      height: 200,
-                      color: Colors.grey[300],
-                      child: Icon(Icons.image_not_supported),
-                    );
-                  },
-                ),
-              SizedBox(height: 16),
-              Text(
-                attraction.name,
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
-              Text('Category: ${attraction.category}'),
-              Text('Address: ${attraction.address}'),
-              if (attraction.website.isNotEmpty)
-                TextButton(
-                  onPressed: () => _launchUrl(attraction.website),
-                  child: Text('Visit Website'),
-                ),
-              SizedBox(height: 8),
-              RatingBar.builder(
-                initialRating: attraction.rating,
-                minRating: 1,
-                direction: Axis.horizontal,
-                allowHalfRating: true,
-                itemCount: 5,
-                itemSize: 20,
-                itemBuilder: (context, _) => Icon(
-                  Icons.star,
-                  color: Colors.amber,
-                ),
-                onRatingUpdate: (rating) {
-                  // Implement rating update logic here
-                },
-              ),
-              SizedBox(height: 16),
-              Text('Description: ${attraction.description}'),
-              SizedBox(height: 8),
-              Text('Contact: ${attraction.contactInfo}'),
-              SizedBox(height: 8),
-              Text('Opening Hours: ${attraction.openingHours}'),
-              SizedBox(height: 16),
-              Text(
-                'Directions:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: _routeInstructions.length,
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding: EdgeInsets.symmetric(vertical: 4),
-                      child: Text('${index + 1}. ${_routeInstructions[index]}'),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+  void _showAttractionDetails(Attraction attraction) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AttractionDetailScreen(
+          attraction: attraction,
+          currentPosition: _currentPosition,
+        ),
+      ),
     );
   }
-
-  Future<void> _launchUrl(String url) async {
-    if (await canLaunch(url)) {
-      await launch(url);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not launch $url')),
-      );
-    }
-  }
-
-  void _zoomIn() {
-    _mapController.move(_mapController.center, _mapController.zoom + 1);
-  }
-
-  void _zoomOut() {
-    _mapController.move(_mapController.center, _mapController.zoom - 1);
-  }
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('${widget.cityName} Attractions'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.filter_list),
+            onPressed: _showFilterDialog,
+          ),
+        ],
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : Column(
         children: [
-          _buildMapView(),
           _buildSearchBar(),
           _buildCategoryChips(),
+          _buildMapView(),
           _buildAttractionList(),
         ],
       ),
-    );
-  }
-
-  Widget _buildMapView() {
-    return Stack(
-      children: [
-        Container(
-          height: 300,
-          child: FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              center: LatLng(widget.cityLat, widget.cityLng),
-              zoom: _zoomLevel,
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                subdomains: ['a', 'b', 'c'],
-              ),
-              PolylineLayer(
-                polylines: [
-                  Polyline(
-                    points: _routePoints,
-                    strokeWidth: 4.0,
-                    color: Colors.blue,
-                  ),
-                ],
-              ),
-              MarkerLayer(
-                markers: [
-                  ..._filteredAttractions.map((attraction) {
-                    return Marker(
-                      width: 80.0,
-                      height: 80.0,
-                      point: LatLng(attraction.lat, attraction.lng),
-                      builder: (ctx) => Container(
-                        child: IconButton(
-                          icon: Icon(Icons.location_on),
-                          color: Colors.red,
-                          iconSize: 45.0,
-                          onPressed: () {
-                            _showAttractionDetails(attraction);
-                          },
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ],
-              ),
-            ],
-          ),
-        ),
-        Positioned(
-          right: 10,
-          bottom: 10,
-          child: Column(
-            children: [
-              FloatingActionButton(
-                child: Icon(Icons.add),
-                onPressed: _zoomIn,
-                mini: true,
-              ),
-              SizedBox(height: 10),
-              FloatingActionButton(
-                child: Icon(Icons.remove),
-                onPressed: _zoomOut,
-                mini: true,
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
@@ -495,11 +271,12 @@ class _AttractionListScreenState extends State<AttractionListScreen> {
     return Padding(
       padding: EdgeInsets.all(8.0),
       child: TextField(
+        controller: _searchController,
         decoration: InputDecoration(
           labelText: 'Search attractions',
           suffixIcon: Icon(Icons.search),
         ),
-        onChanged: _filterAttractions,
+        onChanged: (_) => _filterAttractions(),
       ),
     );
   }
@@ -507,7 +284,7 @@ class _AttractionListScreenState extends State<AttractionListScreen> {
   Widget _buildCategoryChips() {
     final categories = ['All', ...Set<String>.from(_attractions.map((a) => a.category))];
 
-    return SizedBox(
+    return Container(
       height: 50,
       child: ListView(
         scrollDirection: Axis.horizontal,
@@ -520,9 +297,7 @@ class _AttractionListScreenState extends State<AttractionListScreen> {
               onSelected: (selected) {
                 setState(() {
                   _selectedCategory = category;
-                  _filteredAttractions = _attractions.where((attraction) =>
-                  _selectedCategory == 'All' || attraction.category == _selectedCategory)
-                      .toList();
+                  _filterAttractions();
                 });
               },
             ),
@@ -532,70 +307,252 @@ class _AttractionListScreenState extends State<AttractionListScreen> {
     );
   }
 
-  Widget _buildAttractionList() {
-    return Expanded(
-      child: ListView.builder(
-        itemCount: _filteredAttractions.length,
-        itemBuilder: (context, index) {
-          final attraction = _filteredAttractions[index];
-          return Card(
-            elevation: 4,
-            margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-            child: ListTile(
-              leading: Image.network(
-                attraction.imageUrl,
-                width: 50,
-                height: 50,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(Icons.image_not_supported);
-                },
-              ),
-              title: Text(attraction.name),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(attraction.category),
-                  Text(
-                    attraction.address,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  RatingBar.builder(
-                    initialRating: attraction.rating,
-                    minRating: 1,
-                    direction: Axis.horizontal,
-                    allowHalfRating: true,
-                    itemCount: 5,
-                    itemSize: 16,
-                    itemBuilder: (context, _) => Icon(
-                      Icons.star,
-                      color: Colors.amber,
-                    ),
-                    onRatingUpdate: (rating) {
-                      // Implement rating update logic here
-                    },
-                  ),
-                ],
-              ),
-              onTap: () {
-                _mapController.move(
-                  LatLng(attraction.lat, attraction.lng),
-                  _zoomLevel,
-                );
-                _showAttractionDetails(attraction);
-              },
-              trailing: IconButton(
-                icon: Icon(Icons.directions),
-                onPressed: () {
-                  // _launchMapsUrl(attraction.lat, attraction.lng);
-                },
-              ),
+  Widget _buildMapView() {
+    return Container(
+      height: 200,
+      child: FlutterMap(
+        mapController: _mapController,
+        options: MapOptions(
+          center: LatLng(widget.cityLat, widget.cityLng),
+          zoom: _zoomLevel,
+          onPositionChanged: (position, hasGesture) {
+            if (!hasGesture) return;
+            _fetchMoreAttractions();
+          },
+        ),
+        nonRotatedChildren: [
+          Positioned(
+            right: 20,
+            bottom: 20,
+            child: Column(
+              children: [
+                FloatingActionButton(
+                  mini: true,
+                  child: Icon(Icons.add),
+                  onPressed: () {
+                    setState(() {
+                      _zoomLevel = min(_zoomLevel + 1, 18);
+                      _mapController.move(_mapController.center, _zoomLevel);
+                    });
+                  },
+                ),
+                SizedBox(height: 8),
+                FloatingActionButton(
+                  mini: true,
+                  child: Icon(Icons.remove),
+                  onPressed: () {
+                    setState(() {
+                      _zoomLevel = max(_zoomLevel - 1, 3);
+                      _mapController.move(_mapController.center, _zoomLevel);
+                    });
+                  },
+                ),
+              ],
             ),
-          );
-        },
+          ),
+        ],
+        children: [
+          TileLayer(
+            urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            subdomains: ['a', 'b', 'c'],
+          ),
+          MarkerLayer(
+            markers: _filteredAttractions.map((attraction) {
+              return Marker(
+                width: 40.0,
+                height: 40.0,
+                point: LatLng(attraction.lat, attraction.lng),
+                builder: (ctx) => GestureDetector(
+                  onTap: () => _showAttractionDetails(attraction),
+                  child: Icon(
+                    Icons.location_on,
+                    color: Colors.red,
+                    size: 40.0,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }
-}
 
+  Widget _buildAttractionList() {
+    return Expanded(
+      child: RefreshIndicator(
+        onRefresh: () async {
+          await _fetchAttractions();
+          return;
+        },
+        child: ListView.builder(
+          itemCount: _filteredAttractions.length,
+          itemBuilder: (context, index) {
+            final attraction = _filteredAttractions[index];
+            return Card(
+              elevation: 4,
+              margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              child: ListTile(
+                leading: SizedBox(
+                  width: 50,
+                  height: 50,
+                  child: Image.network(
+                    attraction.imageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey[300],
+                        child: Icon(Icons.image, color: Colors.grey[600]),
+                      );
+                    },
+                  ),
+                ),
+                title: Text(attraction.name),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(attraction.category),
+                    Row(
+                      children: List.generate(5, (index) {
+                        return Icon(
+                          index < attraction.rating.floor() ? Icons.star : Icons.star_border,
+                          color: Colors.amber,
+                          size: 16,
+                        );
+                      }),
+                    ),
+                  ],
+                ),
+                trailing: TextButton(
+                  onPressed: attraction.website.isNotEmpty ? () {
+                    // Open the website in a browser
+                    launch(attraction.website);
+                  } : null,
+                  child: Text('Website'),
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size(48, 24),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+                onTap: () => _showAttractionDetails(attraction),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+  void _showFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Sort by'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RadioListTile<String>(
+                title: Text('Rating'),
+                value: 'Rating',
+                groupValue: _sortBy,
+                onChanged: (value) {
+                  setState(() {
+                    _sortBy = value!;
+                    _sortAttractions();
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+              RadioListTile<String>(
+                title: Text('Name'),
+                value: 'Name',
+                groupValue: _sortBy,
+                onChanged: (value) {
+                  setState(() {
+                    _sortBy = value!;
+                    _sortAttractions();
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+              RadioListTile<String>(
+                title: Text('Distance'),
+                value: 'Distance',
+                groupValue: _sortBy,
+                onChanged: (value) {
+                  setState(() {
+                    _sortBy = value!;
+                    _sortAttractions();
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _fetchMoreAttractions() async {
+    final currentCenter = _mapController.center;
+    final radius = 5000 * pow(2, 13 - _zoomLevel);
+
+    try {
+      final categories = [
+        'restaurant',
+        'hotel',
+        'sights-museums',
+        'leisure-outdoor',
+        'shopping',
+        'transport',
+      ];
+
+      final newAttractions = <Attraction>[];
+
+      for (final category in categories) {
+        final url = Uri.parse(
+            'https://discover.search.hereapi.com/v1/discover'
+                '?apiKey=$_apiKey'
+                '&q=$category'
+                '&in=circle:${currentCenter.latitude},${currentCenter.longitude};r=$radius'
+                '&limit=20'
+        );
+
+        final response = await http.get(url);
+
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          print('API Response: $data'); // Debug print
+          final items = data['items'] as List;
+
+          for (var item in items) {
+            final attraction = _attractionFromHereAPI(item);
+            final imageUrl = await _getImageFromUnsplash(attraction.name, attraction.category);
+            final attractionWithImage = attraction.copyWith(imageUrl: imageUrl);
+            newAttractions.add(attractionWithImage);
+          }
+        } else {
+          print('Error response: ${response.statusCode} - ${response.body}'); // Debug print
+          throw Exception('API returned ${response.statusCode}');
+        }
+      }
+
+      setState(() {
+        _attractions.addAll(newAttractions);
+        _filteredAttractions = _attractions;
+        if (_selectedCategory != 'All') {
+          _filteredAttractions = _filteredAttractions
+              .where((attraction) => attraction.category == _selectedCategory)
+              .toList();
+        }
+      });
+    } catch (e) {
+      print("Error fetching more attractions: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading more attractions: $e')),
+      );
+    }
+  }
+}

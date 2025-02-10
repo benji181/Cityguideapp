@@ -27,6 +27,8 @@ dependencies:
   flutter_rating_bar: ^4.0.1
   cached_network_image: ^3.3.0
   google_maps_flutter: ^2.2.1
+  flutter_dotenv: ^5.0.2
+
 
 
 
