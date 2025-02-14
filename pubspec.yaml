@@ -28,10 +28,18 @@ dependencies:
   cached_network_image: ^3.3.0
   google_maps_flutter: ^2.2.1
   flutter_dotenv: ^5.0.2
+  image_picker: ^0.8.5+3
+  firebase_storage: ^11.6.5
+  cloud_firestore: ^4.0.1
+  firebase_database: ^10.2.5 # Replace with the latest version
+  firebase_app_check: ^0.2.1+14  # Use the latest stable version
+  supabase_flutter: ^2.8.3
+  shared_preferences: ^2.2.2  # Replace with the latest version
 
 
 
 
+  # Use the latest stable version
 
   #github_sign_in: ^0.0.5-dev.1
 
@@ -42,6 +50,7 @@ dependency_overrides:
   webview_flutter_wkwebview: ^3.9.4
   http: ^1.0.0
   flutter_polyline_points: ^2.1.0
+
 
 
 #dependency_overrides:

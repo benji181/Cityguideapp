@@ -1,9 +1,10 @@
+import 'package:cityguideapp/screens/user_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import 'package:cityguideapp/screens/city_selection_screen.dart';
 import 'package:cityguideapp/screens/likes_screen.dart';
 import 'package:cityguideapp/screens/search_screen.dart';
-import 'package:cityguideapp/screens/profile_screen.dart';
+
 
 class MainLayout extends StatefulWidget {
   @override
@@ -17,7 +18,7 @@ class _MainLayoutState extends State<MainLayout> {
     CitySelectionScreen(),
     LikesScreen(),
     SearchScreen(),
-    ProfileScreen(),
+    UserProfileScreen()
   ];
 
   @override

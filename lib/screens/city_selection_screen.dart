@@ -1,3 +1,4 @@
+import 'package:cityguideapp/screens/Admin_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import 'package:cityguideapp/screens/likes_screen.dart';
@@ -276,23 +277,30 @@ class _CitySelectionScreenState extends State<CitySelectionScreen> {
             case 2:
               Navigator.push(context, MaterialPageRoute(builder: (context) => UserProfileScreen()));
               break;
+              case 3:
+              Navigator.push(context, MaterialPageRoute(builder: (context) => AdminDashboardScreen()));
+              break;
           }
         },
         items: [
           SalomonBottomBarItem(
-            icon: Icon(Icons.home),
-            title: Text("Home"),
-            selectedColor: Colors.brown,
+            icon: Icon(Icons.home_sharp),
+            title: Text("Cities"),
+            selectedColor: Colors.blue,
           ),
           SalomonBottomBarItem(
-            icon: Icon(Icons.favorite_border),
-            title: Text("Likes"),
+            icon: Icon(Icons.favorite_border_sharp),
+            title: Text("Liked cities"),
             selectedColor: Colors.pink,
           ),
           SalomonBottomBarItem(
-            icon: Icon(Icons.person),
-            title: Text("Profile"),
+            icon: Icon(Icons.person_outline_outlined),
+            title: Text("My Profile"),
             selectedColor: Colors.teal,
+          ), SalomonBottomBarItem(
+            icon: Icon(Icons.admin_panel_settings),
+            title: Text("Admin-center"),
+            selectedColor: Colors.red,
           ),
         ],
       ),

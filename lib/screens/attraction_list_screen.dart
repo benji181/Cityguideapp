@@ -39,7 +39,7 @@ class _AttractionListScreenState extends State<AttractionListScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   final String _unsplashApiKey = 'rAJe0q86-WJBOOnSk4PbCIZUQK1vkJLX0XP5880I90g'; // Replace with your Unsplash access key
-  String _apiKey = 'puSI3dzJ263diYCcXINNhmrqDfp0ZeM_Wjv3c07_VKQ'; // Replace with your actual HERE API key
+  final String _apiKey = 'puSI3dzJ263diYCcXINNhmrqDfp0ZeM_Wjv3c07_VKQ'; // Replace with your actual HE  RE API key
 
 
   @override

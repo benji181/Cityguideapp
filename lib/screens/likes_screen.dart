@@ -1,6 +1,6 @@
 import 'package:cityguideapp/screens/city_selection_screen.dart';
-import 'package:cityguideapp/screens/profile_screen.dart';
 import 'package:cityguideapp/screens/search_screen.dart';
+import 'package:cityguideapp/screens/user_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 
@@ -19,6 +19,9 @@ class _LikesScreenState extends State<LikesScreen> {
       body: Center(
         child: Text('Likes Screen'),
       ),
+
+
+
       bottomNavigationBar: SalomonBottomBar(
         currentIndex: _currentIndex,
         onTap: (index) {
@@ -45,31 +48,30 @@ class _LikesScreenState extends State<LikesScreen> {
             case 3:
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => ProfileScreen()),
+                MaterialPageRoute(builder: (context) => UserProfileScreen()),
               );
               break;
           }
         },
         items: [
           SalomonBottomBarItem(
-            icon: Icon(Icons.home),
-            title: Text("Home"),
-            selectedColor: Colors.purple,
+            icon: Icon(Icons.home_sharp),
+            title: Text("Cities"),
+            selectedColor: Colors.blue,
           ),
           SalomonBottomBarItem(
-            icon: Icon(Icons.favorite_border),
-            title: Text("Likes"),
+            icon: Icon(Icons.favorite_border_sharp),
+            title: Text("Liked cities"),
             selectedColor: Colors.pink,
           ),
           SalomonBottomBarItem(
-            icon: Icon(Icons.search),
-            title: Text("Search"),
-            selectedColor: Colors.orange,
-          ),
-          SalomonBottomBarItem(
-            icon: Icon(Icons.person),
-            title: Text("Profile"),
+            icon: Icon(Icons.person_outline_outlined),
+            title: Text("My Profile"),
             selectedColor: Colors.teal,
+          ), SalomonBottomBarItem(
+            icon: Icon(Icons.admin_panel_settings),
+            title: Text("Admin-center"),
+            selectedColor: Colors.red,
           ),
         ],
       ),
