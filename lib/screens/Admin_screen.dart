@@ -1,8 +1,11 @@
+import 'package:cityguideapp/screens/EditAttractionsScreen.dart';
 import 'package:cityguideapp/screens/attraction_list_screen.dart';
 import 'package:cityguideapp/screens/likes_screen.dart';
 import 'package:cityguideapp/screens/user_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase
+import 'package:firebase_auth/firebase_auth.dart'; //Import Firebase Auth
 
 import 'city_selection_screen.dart';
 
@@ -12,7 +15,101 @@ class AdminDashboardScreen extends StatefulWidget {
 }
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  int _currentIndex = 3; // Set the initial index to 1 for LikesScreen
+  int _currentIndex = 3;
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _categoryController = TextEditingController();
+
+  void _showAddAttractionDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Add New Attraction'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _nameController,
+                decoration: InputDecoration(labelText: 'Name'),
+              ),
+              TextField(
+                controller: _addressController,
+                decoration: InputDecoration(labelText: 'Address'),
+              ),
+              TextField(
+                controller: _categoryController,
+                decoration: InputDecoration(labelText: 'Category'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              _addNewAttraction();
+              Navigator.pop(context);
+            },
+            child: Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _addNewAttraction() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('No user logged in');
+      }
+
+      // Validate input data
+      if (_nameController.text.isEmpty ||
+          _addressController.text.isEmpty ||
+          _categoryController.text.isEmpty) {
+        throw Exception('Please fill in all fields');
+      }
+
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(child: CircularProgressIndicator()),
+      );
+
+      await Supabase.instance.client
+          .from('attractions')
+          .insert({
+        'name': _nameController.text,
+        'address': _addressController.text,
+        'category': _categoryController.text,
+        'created_by': user.uid,
+      });
+
+      // Hide loading indicator and clear fields
+      Navigator.of(context).pop();
+      _nameController.clear();
+      _addressController.clear();
+      _categoryController.clear();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Attraction added successfully!')),
+      );
+    } catch (e) {
+      // Hide loading indicator if it's still showing
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error adding attraction: ${e.toString()}')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -100,9 +197,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             leading: Icon(Icons.add),
             title: Text('Add New Attraction'),
             onTap: () {
-              Navigator.push(context, MaterialPageRoute(
-                builder: (context) => AttractionListScreen(cityId: '', cityName: '', cityLat: 0.0, cityLng: 0.0),
-              ));
+              _showAddAttractionDialog();
             },
           ),
         ),
@@ -111,8 +206,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             leading: Icon(Icons.edit),
             title: Text('Edit Existing Attractions'),
             onTap: () {
-              // TODO: Implement edit attractions
-            },
+             Navigator.push(
+             context,
+               MaterialPageRoute(builder: (context) => EditAttractionsScreen()),
+                );
+            }
           ),
         ),
       ],

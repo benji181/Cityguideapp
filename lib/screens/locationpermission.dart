@@ -17,21 +17,42 @@ class _LocationPermissionExampleState
   }
 
   Future<void> _checkLocationPermission() async {
-    // Check if location permission is granted
     var status = await Permission.location.status;
 
     if (!status.isGranted) {
-      // If permission is not granted, request permission
-      if (await Permission.location.request().isGranted) {
-        // Permission granted
-        print('Location permission granted');
-      } else {
-        // Permission denied
-        print('Location permission denied');
-      }
-    } else {
-      // Permission already granted
-      print('Location permission already granted');
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) => AlertDialog(
+          title: Text('Location Permission Required'),
+          content: Text('This app needs location access to show nearby attractions. Please grant location permission.'),
+          actions: [
+            TextButton(
+              child: Text('Settings'),
+              onPressed: () async {
+                Navigator.pop(context);
+                await openAppSettings();
+              },
+            ),
+            TextButton(
+              child: Text('Request Permission'),
+              onPressed: () async {
+                Navigator.pop(context);
+                final result = await Permission.location.request();
+                if (result.isGranted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Location permission granted')),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Location permission denied')),
+                  );
+                }
+              },
+            ),
+          ],
+        ),
+      );
     }
   }
 

@@ -15,12 +15,14 @@ class AttractionListScreen extends StatefulWidget {
   final String cityName;
   final double cityLat;
   final double cityLng;
+  final bool isManageMode;
 
   AttractionListScreen({
     required this.cityId,
     required this.cityName,
     required this.cityLat,
     required this.cityLng,
+    this.isManageMode = false,
   });
 
   @override
@@ -423,7 +425,19 @@ class _AttractionListScreenState extends State<AttractionListScreen> {
                     ),
                   ],
                 ),
-                trailing: TextButton(
+                trailing: widget.isManageMode ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.edit),
+                      onPressed: () => _editAttraction(attraction),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete),
+                      onPressed: () => _deleteAttraction(attraction),
+                    ),
+                  ],
+                ) : TextButton(
                   onPressed: attraction.website.isNotEmpty ? () {
                     // Open the website in a browser
                     launch(attraction.website);
@@ -554,5 +568,122 @@ class _AttractionListScreenState extends State<AttractionListScreen> {
         SnackBar(content: Text('Error loading more attractions: $e')),
       );
     }
+  }
+
+  void _editAttraction(Attraction attraction) {
+    String name = attraction.name;
+    String category = attraction.category;
+    String description = attraction.description;
+    String address = attraction.address;
+    String website = attraction.website;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Edit Attraction'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  decoration: InputDecoration(labelText: 'Name'),
+                  controller: TextEditingController(text: name),
+                  onChanged: (value) => name = value,
+                ),
+                TextField(
+                  decoration: InputDecoration(labelText: 'Category'),
+                  controller: TextEditingController(text: category),
+                  onChanged: (value) => category = value,
+                ),
+                TextField(
+                  decoration: InputDecoration(labelText: 'Description'),
+                  controller: TextEditingController(text: description),
+                  onChanged: (value) => description = value,
+                ),
+                TextField(
+                  decoration: InputDecoration(labelText: 'Address'),
+                  controller: TextEditingController(text: address),
+                  onChanged: (value) => address = value,
+                ),
+                TextField(
+                  decoration: InputDecoration(labelText: 'Website'),
+                  controller: TextEditingController(text: website),
+                  onChanged: (value) => website = value,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                // Here you would typically update your database
+                final updatedAttraction = Attraction(
+                  id: attraction.id,
+                  name: name,
+                  category: category,
+                  rating: attraction.rating,
+                  imageUrl: attraction.imageUrl,
+                  lat: attraction.lat,
+                  lng: attraction.lng,
+                  description: description,
+                  contactInfo: attraction.contactInfo,
+                  openingHours: attraction.openingHours,
+                  address: address,
+                  website: website,
+                );
+
+                // Update in database logic here
+
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Attraction updated successfully')),
+                );
+              },
+              child: Text('Update'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _deleteAttraction(Attraction attraction) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Delete Attraction'),
+          content: Text('Are you sure you want to delete ${attraction.name}?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                // Delete from database logic here
+
+                setState(() {
+                  _attractions.removeWhere((a) => a.id == attraction.id);
+                  _filteredAttractions.removeWhere((a) => a.id == attraction.id);
+                });
+
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Attraction deleted successfully')),
+                );
+              },
+              child: Text('Delete'),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

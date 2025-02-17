@@ -214,6 +214,7 @@ class _CitySelectionScreenState extends State<CitySelectionScreen> {
                     cityName: cities[index].name,
                     cityLat: cities[index].lat,
                     cityLng: cities[index].lng,
+                    isManageMode: false,
                   ),
                 ),
               );
@@ -277,7 +278,7 @@ class _CitySelectionScreenState extends State<CitySelectionScreen> {
             case 2:
               Navigator.push(context, MaterialPageRoute(builder: (context) => UserProfileScreen()));
               break;
-              case 3:
+            case 3:
               Navigator.push(context, MaterialPageRoute(builder: (context) => AdminDashboardScreen()));
               break;
           }
@@ -368,6 +369,7 @@ class CitySearchDelegate extends SearchDelegate<City> {
                   cityName: suggestionList[index].name,
                   cityLat: suggestionList[index].lat,
                   cityLng: suggestionList[index].lng,
+                  isManageMode: false,
                 ),
               ),
             );
@@ -377,4 +379,3 @@ class CitySearchDelegate extends SearchDelegate<City> {
     );
   }
 }
-
